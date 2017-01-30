@@ -1,9 +1,8 @@
 package br.com.cinq.kafka.sample.callback;
 
-import java.sql.Timestamp;
-
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
+import javax.transaction.Transaction;
 import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
@@ -30,24 +29,22 @@ public class MyCallback implements Callback {
     @Override
     @Transactional
     public void receive(String message) {
-        logger.debug("Message received: {} by {}", message, Thread.currentThread().getName() + ":" + Thread.currentThread().getId());
+        logger.info("Message received: {} by {}", message, Thread.currentThread().getName() + ":" + Thread.currentThread().getId());
 
-        // Simulate some processing, that takes long than expected
-        if (message != null && message.contains("#STAAAP#")) {
-            try {
-                Thread.sleep(60000L);
-            } catch (InterruptedException e) {
-            }
-        }
         EntityTransaction trn = null;
         try {
             Message entity = new Message();
-            entity.setMessage(message);
-            entity.setCreated(new Timestamp(System.currentTimeMillis()));
+//            entity.setMessage(message);
+//            trn = em.getTransaction();
+//            trn.begin();
             dao.save(entity);
+//            trn.commit();
+//            trn = null;
         } catch (Exception e) {
-            logger.error("Couldn't insert a message", e);
+            logger.error("Couldn't insert a message",e);
         } finally {
+//            if (trn != null)
+//                trn.rollback();
         }
     }
 }

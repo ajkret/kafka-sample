@@ -12,13 +12,7 @@ spring:
         database: MySQL
 
 broker:
+    bootstrapServer: 192.168.226.212:9092
     zookeeper: 192.168.226.212:2181
     producer:
-        bootstrapServer: 192.168.226.212:9092
         linger-time-ms: 0
-        async-calls: false
-        acks: 0
-    consumer:
-        bootstrapServer: 192.168.226.212:9092
-        commit-before-processing: true
-        max-poll-records: 50

@@ -2,12 +2,11 @@ package br.com.cinq.kafka.sample.kafka;
 
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
-import org.apache.kafka.clients.producer.Callback;
+import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.ZkConnection;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +17,9 @@ import org.springframework.stereotype.Component;
 
 import br.com.cinq.kafka.sample.Producer;
 import br.com.cinq.kafka.sample.exception.QueueException;
+import kafka.admin.AdminUtils;
+import kafka.utils.ZKStringSerializer$;
+import kafka.utils.ZkUtils;
 
 /**
  * Implements the producer for Kafka.
@@ -26,177 +28,142 @@ import br.com.cinq.kafka.sample.exception.QueueException;
 @Profile("!unit")
 @Qualifier("sampleProducer")
 public class BrokerProducer implements Producer {
-	Logger logger = LoggerFactory.getLogger(Producer.class);
+    Logger logger = LoggerFactory.getLogger(Producer.class);
 
-	/** Concurrent threads reading messages */
-	@Value("${broker.partitions:5}")
-	private int partitions;
+    /** Concurrent threads reading messages */
+    @Value("${broker.partitions:5}")
+    private int partitions;
 
-	/** Topic for subscribe, if applicable */
-	@Value("${broker.topic:karma-sample}")
-	private String topic;
+    /** Topic for subscribe, if applicable */
+    @Value("${broker.topic:karma-sample}")
+    private String topic;
 
-	/** Kafka server */
-	@Value("${broker.producer.bootstrapServer:localhost:9092}")
-	private String bootstrapServer;
+    /** Kafka server */
+    @Value("${broker.bootstrapServer:localhost:9092}")
+    private String bootstrapServer;
 
-	/** Buffer messages, prior to send. This will only have effect if you turn linger.ms on, 
-	 * Kafka will group messages by lingering and filling batch size, whatever comes first.
-	 * By activating linger, you will limit calls to Kafka, and that may put a limit on
-	 * your producer. The acks also will have an effect. If the ack takes more than linger.ms,
-	 * then you won´t have any benefit. 
-	 * Size of the package for sending messages */
-	@Value("${broker.producer.batch-size:16384}")
-	private int batchSize;
+    /** Size of the package for sending messages */
+    @Value("${broker.producer.batch-size:16384}")
+    private int batchSize;
 
-	/** Time to wait before sending */
-	@Value("${broker.producer.linger-time-ms:0}")
-	private int lingerTime;
+    /** Time to wait before sending */
+    @Value("${broker.producer.linger-time-ms:0}")
+    private int lingerTime;
 
-	/** Amount of memory available for buffering, before block the producer */
-	@Value("${broker.producer.buffer-size:33554432}")
-	private int bufferMemory;
+    /** Amount of memory available for buffering, before block the producer */
+    @Value("${broker.producer.buffer-size:33554432}")
+    private int bufferMemory;
 
-	/** Zookeeper server, to manage topics and partitions */
-	@Value("${broker.zookeeper:localhost:2181}")
-	private String zookeeper;
+    /** Zookeeper server, to manage topics and partitions */
+    @Value("${broker.zookeeper:localhost:2181}")
+    private String zookeeper;
 
-	/** Call Future<>.get() or not */
-	@Value("${broker.producer.async-calls:false}")
-	private boolean asyncCalls = false;
+    private int roundRobinCount = 0;
 
+    /** Instance of the producer */
+    private KafkaProducer<String, String> producer = null;
 
-	/** acks all - wait to kafka replicate the message to all replicas. 
-	 * 1-wait the leader receive the update. 0-no acks.
-	 */
-	@Value("${broker.producer.acks:all}")
-	private String acks;
+    private KafkaProducer<String, String> getProducer() {
+        if (producer == null) {
 
-	/** Instance of the producer */
-	private KafkaProducer<String, String> producer = null;
+            logger.info("Connecting to {}", getBootstrapServer());
 
-	private KafkaProducer<String, String> getProducer() {
-		if (producer == null) {
+            Properties props = new Properties();
+            props.put("bootstrap.servers", getBootstrapServer());
+            props.put("acks", "all");
+            props.put("retries", 0);
+            props.put("batch.size", getBatchSize());
+            props.put("linger.ms", getLingerTime());
+            props.put("buffer.memory", getBufferMemory());
+            props.put("key.serializer", StringSerializer.class.getName());
+            props.put("value.serializer", StringSerializer.class.getName());
+            props.put("partitioner.class", BrokerProducerPartitioner.class.getName());
 
-			logger.info("Connecting to {}", getBootstrapServer());
+            // For partitioner, not a valid setting for kafka
+            // this is faster then checking at Cluster
+            props.put("num.partitions", getPartitions());
 
-			Properties props = new Properties();
-			props.put("bootstrap.servers", getBootstrapServer());
-			props.put("acks", getAcks());
-			props.put("retries", 0);
-			props.put("batch.size", getBatchSize());
-			props.put("linger.ms", getLingerTime());
-			props.put("buffer.memory", getBufferMemory());
-			props.put("key.serializer", StringSerializer.class.getName());
-			props.put("value.serializer", StringSerializer.class.getName());
+            producer = new KafkaProducer<>(props);
 
-			// For partitioner, not a valid setting for kafka
-			// this is faster then checking at Cluster
-			// Kafka already have a default partitioner
-			//props.put("partitioner.class", BrokerProducerPartitioner.class.getName());
-			//props.put("num.partitions", getPartitions());
+        }
+        return producer;
+    }
 
-			producer = new KafkaProducer<>(props);
+    public String getBootstrapServer() {
+        return bootstrapServer;
+    }
 
-		}
-		return producer;
-	}
+    public void setBootstrapServer(String bootstrapServer) {
+        this.bootstrapServer = bootstrapServer;
+    }
 
-	public String getBootstrapServer() {
-		return bootstrapServer;
-	}
+    public int getBatchSize() {
+        return batchSize;
+    }
 
-	public void setBootstrapServer(String bootstrapServer) {
-		this.bootstrapServer = bootstrapServer;
-	}
+    public void setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
+    }
 
-	public int getBatchSize() {
-		return batchSize;
-	}
+    public int getLingerTime() {
+        return lingerTime;
+    }
 
-	public void setBatchSize(int batchSize) {
-		this.batchSize = batchSize;
-	}
+    public void setLingerTime(int lingerTime) {
+        this.lingerTime = lingerTime;
+    }
 
-	public int getLingerTime() {
-		return lingerTime;
-	}
+    public int getBufferMemory() {
+        return bufferMemory;
+    }
 
-	public void setLingerTime(int lingerTime) {
-		this.lingerTime = lingerTime;
-	}
+    public void setBufferMemory(int bufferMemory) {
+        this.bufferMemory = bufferMemory;
+    }
 
-	public int getBufferMemory() {
-		return bufferMemory;
-	}
+    public String getTopic() {
+        return topic;
+    }
 
-	public void setBufferMemory(int bufferMemory) {
-		this.bufferMemory = bufferMemory;
-	}
+    public void setTopic(String topic) {
+        this.topic = topic;
+    }
 
-	public String getTopic() {
-		return topic;
-	}
+    public int getPartitions() {
+        return partitions;
+    }
 
-	public void setTopic(String topic) {
-		this.topic = topic;
-	}
+    public void setPartitions(int partitions) {
+        this.partitions = partitions;
+    }
 
-	public int getPartitions() {
-		return partitions;
-	}
+    public String getZookeeper() {
+        return zookeeper;
+    }
 
-	public void setPartitions(int partitions) {
-		this.partitions = partitions;
-	}
+    public void setZookeeper(String zookeeper) {
+        this.zookeeper = zookeeper;
+    }
 
-	public String getZookeeper() {
-		return zookeeper;
-	}
-
-	public void setZookeeper(String zookeeper) {
-		this.zookeeper = zookeeper;
-	}
-
-	/**
+    /**
     * Send the message. The message must be serialized as string
     */
     @Override
     public void send(String message) throws QueueException {
         producer = getProducer();
-        
-		try {
-			logger.debug("Sending message {} to [{}]", getTopic(), message);
 
-			Future<RecordMetadata> future = producer.send(new ProducerRecord<String, String>(getTopic(), message),new Callback() {
+        try {
+            logger.debug("Sending message {} to [{} - {}]", getTopic(), roundRobinCount, message);
 
-				@Override
-				public void onCompletion(RecordMetadata metadata, Exception exception) {
-					logger.debug("Message delivered - offset {}", metadata!=null?metadata.offset():-1L, exception);
-				}
-			});
+            producer.send(new ProducerRecord<String, String>(getTopic(), roundRobinCount, null, message)).get();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.warn("Kafka Producer [{}]", e.getMessage(), e);
+        }
 
-			if (!isAsyncCalls()) {
-				future.get();
-			}
-		} catch (InterruptedException | ExecutionException e) {
-			logger.warn("Kafka Producer [{}]", e.getMessage(), e);
-		}
-	}
+        roundRobinCount += 1;
+        if (roundRobinCount >= partitions) {
+            roundRobinCount = 0;
+        }
+    }
 
-	public boolean isAsyncCalls() {
-		return asyncCalls;
-	}
-
-	public void setAsyncCalls(boolean asyncCalls) {
-		this.asyncCalls = asyncCalls;
-	}
-
-	public String getAcks() {
-		return acks;
-	}
-
-	public void setAcks(String acks) {
-		this.acks = acks;
-	}
 }

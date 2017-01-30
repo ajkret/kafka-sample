@@ -14,14 +14,8 @@ spring:
         database: H2
 
 broker:
+    bootstrapServer: localhost:9092
     zookeeper: localhost:2181
     producer:
-        bootstrapServer: localhost:9092
-        batch-size: 16384
-        linger-time-ms: 50
-        async-calls: true
-        acks: 0
-    consumer:
-        bootstrapServer: localhost:9092
-        commit-before-processing: true
-        max-poll-records: 50
+        linger-time-ms: 0
+

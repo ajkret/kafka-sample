@@ -1,8 +1,6 @@
 package br.com.cinq.kafka.sample.application;
 
 
-import java.util.Properties;
-
 import javax.ws.rs.ApplicationPath;
 
 import org.I0Itec.zkclient.ZkClient;
@@ -23,11 +21,7 @@ import br.com.cinq.kafka.sample.Consumer;
 import br.com.cinq.kafka.sample.Producer;
 import br.com.cinq.kafka.sample.mono.QueueProducerConsumer;
 import kafka.admin.AdminUtils;
-import kafka.admin.RackAwareMode;
-import kafka.admin.RackAwareMode.Disabled$;
-import kafka.admin.RackAwareMode.Enforced$;
 import kafka.common.Topic;
-import kafka.utils.ZKStringSerializer$;
 import kafka.utils.ZkUtils;
 
 /**
@@ -82,31 +76,29 @@ public class Config extends ResourceConfig {
     }
 
     @Bean
-    @Profile("!unit")
     public ZkUtils createOrUpdateTopic() {
         logger.debug("Creating topic {} with replication {} and {} partitions", topic, getReplicationFactor(), partitions);
 
         // Call zookeeper client to create topics WITH partitions
-        ZkClient zkClient = new ZkClient(getZookeeper(),10000,8000,ZKStringSerializer$.MODULE$);
-        ZkUtils utils = new ZkUtils(zkClient, new ZkConnection(getZookeeper()), false);
+        ZkClient zkClient = new ZkClient(getZookeeper());
+        ZkConnection zkConnection = new ZkConnection(getZookeeper(), 10000);
+        ZkUtils utils = new ZkUtils(zkClient, zkConnection, false);
 
         // Create
         if (!AdminUtils.topicExists(utils, getTopic())) {
             // Easiest way to create a Topic programatically
-            AdminUtils.createTopic(utils, getTopic(), getPartitions(), getReplicationFactor(), new Properties(),Enforced$.MODULE$);
+            //AdminUtils.createTopic(utils, getTopic(), getPartitions(), getReplicationFactor(), new Properties());
 
-            // "Manual" assignment of partitions and brokers, may cause problems
-//            Topic.validate(getTopic());
-//            scala.collection.Seq<Object> brokerList = utils.getSortedBrokerList();
-//            scala.collection.Map<Object, scala.collection.Seq<Object>> partitionReplicaAssignment = AdminUtils.assignReplicasToBrokers(brokerList, getPartitions(), 1,
-//                    AdminUtils.assignReplicasToBrokers$default$4(), AdminUtils.assignReplicasToBrokers$default$5());
-//            AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK(utils, getTopic(), partitionReplicaAssignment,
-//                    AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK$default$4(),
-//                    AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK$default$5());
+            // "Manual" assignment of partitions and brokers
+            Topic.validate(getTopic());
+            scala.collection.Seq<Object> brokerList = utils.getSortedBrokerList();
+            scala.collection.Map<Object, scala.collection.Seq<Object>> partitionReplicaAssignment = AdminUtils.assignReplicasToBrokers(brokerList, getPartitions(), 1,
+                    AdminUtils.assignReplicasToBrokers$default$4(), AdminUtils.assignReplicasToBrokers$default$5());
+            AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK(utils, getTopic(), partitionReplicaAssignment,
+                    AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK$default$4(),
+                    AdminUtils.createOrUpdateTopicPartitionAssignmentPathInZK$default$5());
             logger.debug("Topic {} created", topic);
         }
-
-        utils.close();
         return utils;
     }
 

@@ -1,9 +1,7 @@
 package br.com.cinq.kafka.sample.mono;
 
-import java.util.LinkedList;
-import java.util.List;
-
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.stereotype.Component;
 
 import br.com.cinq.kafka.sample.Callback;
 import br.com.cinq.kafka.sample.Consumer;
@@ -22,7 +20,7 @@ public class QueueProducerConsumer implements Producer, Consumer, DisposableBean
     private Callback callback;
 
     /** List of consumers */
-    private static List<Thread> consumers = new LinkedList<>();
+    Thread consumers[];
 
     private QueueWrapperForSpring queue = new QueueWrapperForSpring();
 
@@ -31,28 +29,18 @@ public class QueueProducerConsumer implements Producer, Consumer, DisposableBean
         queue.send(message);
     }
 
-    public void stop() {
-        if (consumers != null) {
-            for (Thread t : consumers) {
-                t.interrupt();
-            }
-            consumers.clear();
-        }
-    }
-
     /**
     * Start to receive messages
     */
     public void start() {
-        if (consumers != null) {
 
-            for (int i = 0; i < getPartitions(); i++) {
-                QueueConsumerClient client = new QueueConsumerClient(queue);
-                client.setCallback(callback);
-                Thread consumerClient = new Thread(client);
-                consumerClient.start();
-                consumers.add(consumerClient);
-            }
+        consumers = new Thread[getPartitions()];
+
+        for (int i = 0; i < getPartitions(); i++) {
+            QueueConsumerClient client = new QueueConsumerClient(queue);
+            client.setCallback(callback);
+            consumers[i] = new Thread(client);
+            consumers[i].start();
         }
     }
 

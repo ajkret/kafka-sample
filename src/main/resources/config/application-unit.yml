@@ -8,7 +8,7 @@ spring:
         max-active: 50
         test-on-borrow: false
         validation-query: SELECT 1
-        validation-interval: 5000
+        validation-interval: 500
 
     jpa:
         database-platform: org.hibernate.dialect.H2Dialect
