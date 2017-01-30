@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+	<property name="MAX_HISTORY_DAYS" value="2" />
+	<property name="LOG_PATH" value="logs" />
+
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>WARN</level>
+		</filter>
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<Pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+			</Pattern>
+		</layout>
+	</appender>
+
+	<appender name="FileLog"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_PATH}/kafka-sample.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_PATH}/kafka-sample.%d{yyyy-MM-dd}.log.gz
+			</fileNamePattern>
+			<maxHistory>${MAX_HISTORY_DAYS}</maxHistory>
+		</rollingPolicy>
+		<append>true</append>
+		<encoder>
+			<pattern>%d [%thread] %-5level %logger{35} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="KafkaTrace"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_PATH}/kafka-trace.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_PATH}/kafka-trace.%d{yyyy-MM-dd}.log.gz
+			</fileNamePattern>
+			<maxHistory>${MAX_HISTORY_DAYS}</maxHistory>
+		</rollingPolicy>
+		<append>true</append>
+		<encoder>
+			<pattern>%d [%thread] %-5level %logger{35} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<logger name="br.com.cinq" level="DEBUG">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="FileLog" />
+	</logger>
+
+	<logger name="org.apache.kafka.clients" level="DEBUG"
+		additivity="false">
+		<appender-ref ref="KafkaTrace" />
+	</logger>
+
+	<root level="WARN">
+		<appender-ref ref="STDOUT" />
+		<appender-ref ref="FileLog" />
+	</root>
+
+</configuration>

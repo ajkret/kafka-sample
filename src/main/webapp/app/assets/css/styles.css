@@ -1,0 +1,6 @@
+@CHARSET "ISO-8859-1";
+
+.dotted-frame {
+	border:thin dotted silver;
+}
+

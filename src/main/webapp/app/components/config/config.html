@@ -1,0 +1,20 @@
+<div ng-controller="ConfigCtrl as ctrl">
+	<div class="panel panel-default">
+		<div class="panel-heading">Configuration</div>
+		<div class="panel-body">
+			<div class="row">
+				<div class="alert alert-danger" role="alert" ng-show="{{ctrl.errorMessage.length>0}}">{{ctrl.errorMessage}}</div>
+			</div>
+			<form name="configForm">
+
+				<div class="form-group">
+					<label for="message">Message of the Day</label>
+					<input type="text" class="form-control input-lg" name="message" ng-model="ctrl.message" required>
+				</div>
+				<div class="form-group">
+					<button type="button" class="btn btn-primary" ng-click="ctrl.save()" ng-enabled="myForm.message.$valid">Save</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>

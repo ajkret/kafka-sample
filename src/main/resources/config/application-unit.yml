@@ -1,0 +1,19 @@
+spring:
+    datasource:
+        driver-class-name: org.h2.Driver
+        url: jdbc:h2:mem:sample;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;TRACE_LEVEL_SYSTEM_OUT=1;INIT=RUNSCRIPT from 'classpath:sql/db_init.h2.sql'
+        username: dbuser
+        password: dbuser
+        max-wait: 1000
+        max-active: 50
+        test-on-borrow: false
+        validation-query: SELECT 1
+        validation-interval: 5000
+
+    jpa:
+        database-platform: org.hibernate.dialect.H2Dialect
+        database: H2
+
+broker:
+    partitions: 5
+

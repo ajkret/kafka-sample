@@ -1,0 +1,27 @@
+spring:
+    datasource:
+        driver-class-name: org.h2.Driver
+        url: jdbc:h2:mem:sample;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;TRACE_LEVEL_SYSTEM_OUT=1;INIT=RUNSCRIPT from 'classpath:sql/db_init.h2.sql'
+        username: dbuser
+        password: dbuser
+        max-wait: 1000
+        max-active: 50
+        test-on-borrow: false
+        validation-query: SELECT 1
+        validation-interval: 500
+    jpa:
+        database-platform: org.hibernate.dialect.H2Dialect
+        database: H2
+
+broker:
+    zookeeper: localhost:2181
+    producer:
+        bootstrapServer: localhost:9092
+        batch-size: 16384
+        linger-time-ms: 50
+        async-calls: true
+        acks: 0
+    consumer:
+        bootstrapServer: localhost:9092
+        commit-before-processing: true
+        max-poll-records: 50

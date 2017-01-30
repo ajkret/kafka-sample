@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<!-- ngApp="app" will cause the "app.js" to be loaded as the application bootstrap
+ng-strict-di means that the application will fail to invoke functions which do not use explicit function annotation (and
+are thus unsuitable for minification), as described in the Dependency Injection guide, and useful debugging info will
+assist in tracking down the root of these bugs. -->
+<html data-ng-app="app" ng-strict-di>
+<head>
+<base href='/' />
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
+<title data-ng-bind="title"></title>
+<style>
+/* This helps the ng-show/ng-hide animations start at the right place. */
+/* Since Angular has this but needs to load, this gives us the class early. */
+.ng-hide {
+	display: none !important;
+}
+</style>
+
+<link href="bower_components/bootstrap/dist/css/bootstrap.min.css"
+	rel="stylesheet" />
+<link href="bower_components/font-awesome/css/font-awesome.min.css"
+	rel="stylesheet" />
+
+<link href="app/assets/css/styles.css" rel="stylesheet" />
+
+
+</head>
+<body>
+	<div class="container">
+
+		<div class="row">
+			<div class="col-md-12 col-xs-12">
+				<div class="panel panel-default">
+					<div class="panel-heading">Main panel</div>
+					<div class="panel-body">
+						<div ng-view></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!--  Libraries -->
+	<script src="bower_components/jquery/dist/jquery.min.js"></script>
+	<script src="bower_components/angular/angular.min.js"></script>
+	<script src="bower_components/angular-route/angular-route.min.js"></script>
+	<script src="bower_components/angular-resource/angular-resource.min.js"></script>
+
+		<!--  Scripts in the end -->
+		<script src="app/app.module.js"></script>
+
+	<!-- Services -->
+	<script src="app/components/greet/greet.service.js"></script>
+
+	<!--  Controllers -->
+	<script src="app/components/greet/greet.js"></script>
+	<script src="app/components/config/config.js"></script>
+
+		<!--  Configuration -->
+		<script src="app/app.router.js"></script>
+</body>
+</html>

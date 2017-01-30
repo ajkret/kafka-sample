@@ -1,0 +1,24 @@
+spring:
+    datasource:
+        driver-class-name: com.mysql.jdbc.Driver
+        url: jdbc:mysql://arara:3306/sample?rewriteBatchedStatements=true
+        username: dbuser
+        password: dbuser
+        max-wait: 1000
+        max-active: 50
+        test-on-borrow: false
+    jpa:
+        database-platform: org.hibernate.dialect.MySQLDialect
+        database: MySQL
+
+broker:
+    zookeeper: 192.168.226.212:2181
+    producer:
+        bootstrapServer: 192.168.226.212:9092
+        linger-time-ms: 0
+        async-calls: false
+        acks: 0
+    consumer:
+        bootstrapServer: 192.168.226.212:9092
+        commit-before-processing: true
+        max-poll-records: 50

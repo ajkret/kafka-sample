@@ -1,0 +1,33 @@
+server:
+    port: 9090
+
+spring:
+    jersey:
+        type: filter
+    jpa:
+
+        openInView: false
+        show_sql: false
+        generate-ddl: false
+        hibernate:
+            ddl-auto: none
+            naming-strategy: org.hibernate.cfg.EJB3NamingStrategy
+        properties:
+             hibernate.cache.use_second_level_cache: false
+             hibernate.cache.use_query_cache: false
+             hibernate.generate_statistics: false
+             hibernate.cache.region.factory_class: org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory
+broker:
+    partitions: 10
+    replication-factor: 1
+    topic: kafka-sample
+    session-timeout: 30000
+    consumer:
+        group-id: test
+        enable-auto-commit: false
+        auto-commit-interval: 1000
+        enable-duplicates: false
+        duplicates: 1
+    producer:
+        batch-size: 32768
+        buffer-size: 33554432
